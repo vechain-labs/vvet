@@ -1,6 +1,6 @@
 # VVET
 
-// Please note this is a draft and this code is under heavy development. NOT to be used in production.
+// **Please note this is a draft and this code is under heavy development. NOT to be used in production.**
 
 Credits: WETH9 https://github.com/gnosis/canonical-weth/commit/0dd1ea3e295eef916d0c6223ec63141137d22d67
 
