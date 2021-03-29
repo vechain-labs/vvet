@@ -28,3 +28,9 @@ function totalSupply() public view returns (uint) {
 // Fixed by:
 Downgrade emv_verion from `Istanbul` to `Constantinople`
 ```
+
+## For Developers
+```bash
+make install # Install depedencies
+make compile # Compile contracts
+```

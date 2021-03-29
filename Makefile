@@ -1,6 +1,7 @@
 # Compile Contracts
 compile:
 	. .env/bin/activate && cd vvet &&  brownie compile
+
 # Install compiler tools
 install:
 	python3 -m venv .env
