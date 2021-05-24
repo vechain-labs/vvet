@@ -1,6 +1,9 @@
 # VVET
 
 ## Instances on VeChain
+
+Below smart contracts are deployed to VeChain Thor network.
+
 |                                              Network                                               |                  Address                   |
 | -------------------------------------------------------------------------------------------------- | ------------------------------------------ |
 | [mainnet](https://explore.vechain.org/accounts/0x0edab4e7e7d2c23d043f1352b7b10d899415ada7/)        | 0x0eDAb4E7e7D2c23D043f1352b7B10d899415ADA7 |
@@ -17,21 +20,6 @@ Neither the name of VeChain (VeChain Foundation) nor the names of its contributo
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-## Problems & Solutions
-```
-// invalid opcode 0x47
-// A new opcode, SELFBALANCE is introduced at 0x47
-
-// https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1884.md
-
-function totalSupply() public view returns (uint) {
-        return address(this).balance;
-}
-
-// Fixed by:
-Downgrade emv_verion from `Istanbul` to `Constantinople`
-```
 
 ## Local Development
 ```bash
