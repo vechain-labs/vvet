@@ -16,7 +16,6 @@ contract VVET9 {
     mapping (address => uint256)                       public  balanceOf;
     mapping (address => mapping (address => uint256))  public  allowance;
 
-	// Address => block number
 	mapping (address => uint256) private lastUpdatedTimestamp;
 	mapping (address => uint256) private lastUpdatedVthoBalanceOf;
 
