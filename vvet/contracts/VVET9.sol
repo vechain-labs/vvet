@@ -92,9 +92,9 @@ contract VVET9 {
 	}
 
 	function vthoWithdraw(address to, uint256 amount) public returns (bool) {
-		IEnergy(energyContractAddress).transfer(to, amount);
-		
 		_update(msg.sender);
+		
+		IEnergy(energyContractAddress).transfer(to, amount);
 
 		assert(lastUpdatedVthoBalanceOf[msg.sender] >= amount);
 		lastUpdatedVthoBalanceOf[msg.sender] -= amount;
