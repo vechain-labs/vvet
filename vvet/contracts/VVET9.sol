@@ -1,76 +1,80 @@
-// Copyright (C) 2021 abyteahead
-// This program is forked from
-// https://github.com/gnosis/canonical-weth
-// Must be compiled with emv_version: constantinpole and above.
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity ^0.8.0;
 
-// Copyright (C) 2015, 2016, 2017 Dapphub
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-pragma solidity >=0.4.22 <0.6.0;
+import "./IEnergy.sol";
 
 contract VVET9 {
     string public name     = "Veiled VET";
     string public symbol   = "VVET";
     uint8  public decimals = 18;
 
-    event  Approval(address indexed src, address indexed guy, uint wad);
-    event  Transfer(address indexed src, address indexed dst, uint wad);
-    event  Deposit(address indexed dst, uint wad);
-    event  Withdrawal(address indexed src, uint wad);
+    event  Approval(address indexed src, address indexed guy, uint256 wad);
+    event  Transfer(address indexed src, address indexed dst, uint256 wad);
+    event  Deposit(address indexed dst, uint256 wad);
+    event  Withdrawal(address indexed src, uint256 wad);
 
-    mapping (address => uint)                       public  balanceOf;
-    mapping (address => mapping (address => uint))  public  allowance;
+    mapping (address => uint256)                       public  balanceOf;
+    mapping (address => mapping (address => uint256))  public  allowance;
 
-    function() external payable {
+	// Address => block number
+	mapping (address => uint256) private lastUpdatedTimestamp;
+	mapping (address => uint256) private lastUpdatedVthoBalanceOf;
+
+	address constant energyContractAddress = 0x0000000000000000000000000000456E65726779;
+
+	event VthoWithdraw(address indexed from, address indexed to, uint256 amount);
+
+    receive() external payable {
         deposit();
     }
+
     function deposit() public payable {
         balanceOf[msg.sender] += msg.value;
         emit Deposit(msg.sender, msg.value);
+
+		_update(msg.sender);
     }
-    function withdraw(uint wad) public {
+
+    function withdraw(uint256 wad) public {
         require(balanceOf[msg.sender] >= wad);
-        balanceOf[msg.sender] -= wad;
-        msg.sender.transfer(wad);
+        
+		// update before withdraw
+		_update(msg.sender);
+		
+		balanceOf[msg.sender] -= wad;
+        payable(msg.sender).transfer(wad);
+
         emit Withdrawal(msg.sender, wad);
     }
 
-    function totalSupply() public view returns (uint) {
+    function totalSupply() public view returns (uint256) {
         return address(this).balance;
     }
 
-    function approve(address guy, uint wad) public returns (bool) {
+    function approve(address guy, uint256 wad) public returns (bool) {
         allowance[msg.sender][guy] = wad;
         emit Approval(msg.sender, guy, wad);
         return true;
     }
 
-    function transfer(address dst, uint wad) public returns (bool) {
+    function transfer(address dst, uint256 wad) public returns (bool) {
         return transferFrom(msg.sender, dst, wad);
     }
 
-    function transferFrom(address src, address dst, uint wad)
+    function transferFrom(address src, address dst, uint256 wad)
         public
         returns (bool)
     {
         require(balanceOf[src] >= wad);
 
-        if (src != msg.sender && allowance[src][msg.sender] != uint(-1)) {
+        if (src != msg.sender && allowance[src][msg.sender] != type(uint256).max) {
             require(allowance[src][msg.sender] >= wad);
             allowance[src][msg.sender] -= wad;
         }
+
+		// update before vet balance changes
+		_update(src);
+		_update(dst);
 
         balanceOf[src] -= wad;
         balanceOf[dst] += wad;
@@ -79,6 +83,46 @@ contract VVET9 {
 
         return true;
     }
+
+	function vthoBalanceOf(address acc) public view returns (uint256) {
+		if (lastUpdatedTimestamp[acc] == 0) {
+			return 0;
+		}
+
+		return lastUpdatedVthoBalanceOf[acc] + _calVthoIncrement(acc);
+	}
+
+	function vthoWithdraw(address to, uint256 amount) public returns (bool) {
+		IEnergy(energyContractAddress).transfer(to, amount);
+		
+		_update(msg.sender);
+
+		assert(lastUpdatedVthoBalanceOf[msg.sender] >= amount);
+		lastUpdatedVthoBalanceOf[msg.sender] -= amount;
+
+		emit VthoWithdraw(msg.sender, to, amount);
+		
+		return true;
+	}
+
+	function _update(address acc) internal {
+		if(lastUpdatedTimestamp[acc] > 0) {
+			assert(lastUpdatedTimestamp[acc] <= block.timestamp);
+
+			// update vtho balance
+			if (lastUpdatedTimestamp[acc] < block.timestamp) {
+				lastUpdatedVthoBalanceOf[acc] += _calVthoIncrement(acc);
+			}
+		}
+
+		// update timestamp
+		lastUpdatedTimestamp[acc] = block.timestamp;
+	}
+
+	function _calVthoIncrement(address acc) internal view returns (uint256) {
+		// 5e-9 VTHO per VET per second
+		return (balanceOf[acc] * (block.timestamp - lastUpdatedTimestamp[acc]) * 5) / 1e9;
+	}
 }
 
 
