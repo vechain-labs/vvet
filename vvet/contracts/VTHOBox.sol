@@ -17,12 +17,12 @@ contract VTHOBox {
 
     mapping(address => User) private users;
 
-    function addVET(address addr, uint104 amount) public {
+    function addVET(address addr, uint104 amount) internal {
         _update(addr);
         users[addr].vetBalance += amount;
     }
 
-    function removeVET(address addr, uint104 amount) public {
+    function removeVET(address addr, uint104 amount) internal {
         _update(addr);
         users[addr].vetBalance -= amount;
     }
@@ -31,12 +31,12 @@ contract VTHOBox {
         return users[addr].vetBalance;
     }
 
-    function addVTHO(address addr, uint104 amount) public {
+    function addVTHO(address addr, uint104 amount) internal {
         _update(addr);
         users[addr].vthoBalance += amount;
     }
 
-    function removeVTHO(address addr, uint104 amount) public {
+    function removeVTHO(address addr, uint104 amount) internal {
         _update(addr);
         users[addr].vthoBalance -= amount;
     }
