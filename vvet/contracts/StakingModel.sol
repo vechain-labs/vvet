@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.0;
 
-// VTHO Box tracks the in-and-out of user's VET
+// StakingModel tracks the in-and-out of user's VET
 // And updates user's vtho balance accordingly.
 
 // It can also track the in-and-out of user's VTHO.
@@ -10,7 +10,7 @@ pragma solidity ^0.8.0;
 // uint48 - enough to store 30,000+ years.
 // uint104 - enough to store whole vet on VeChain.
 // uint104 - enough to store vtho for 100+ years.
-contract VTHOBox {
+contract StakingModel {
 
     struct User {
         uint104 balance; // vet in wei
@@ -32,6 +32,7 @@ contract VTHOBox {
 
     function removeVET(address addr, uint256 amount) restrict(amount) internal {
         _update(addr);
+        assert(users[addr].balance >= uint104(amount));
         users[addr].balance -= uint104(amount);
     }
 
@@ -46,6 +47,7 @@ contract VTHOBox {
 
     function removeVTHO(address addr, uint256 amount) restrict(amount) internal {
         _update(addr);
+        assert(users[addr].energy >= uint104(amount));
         users[addr].energy -= uint104(amount);
     }
 

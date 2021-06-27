@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.0;
+import "./StakingModel.sol";
 import "../interfaces/IEnergy.sol";
 
-contract VVET9 {
+contract VVET9 is StakingModel {
     string public name = "Veiled VET";
     string public symbol = "VVET";
     uint8 public decimals = 18;
@@ -12,7 +13,6 @@ contract VVET9 {
     event Deposit(address indexed dst, uint256 wad);
     event Withdrawal(address indexed src, uint256 wad);
 
-    mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
     receive() external payable {
@@ -20,15 +20,20 @@ contract VVET9 {
     }
 
     function deposit() public payable {
-        balanceOf[msg.sender] += msg.value;
+        addVET(msg.sender, msg.value);
         emit Deposit(msg.sender, msg.value);
     }
 
     function withdraw(uint256 wad) public {
-        require(balanceOf[msg.sender] >= wad);
-        balanceOf[msg.sender] -= wad;
+        require(vetBalance(msg.sender) >= wad);
+        removeVET(msg.sender, wad);
         payable(msg.sender).transfer(wad);
         emit Withdrawal(msg.sender, wad);
+    }
+
+    // Adhere to the VIP-180 token standard
+    function balanceOf(address guy) public view returns (uint256) {
+        return vetBalance(guy);
     }
 
     function totalSupply() public view returns (uint256) {
@@ -50,7 +55,7 @@ contract VVET9 {
         address dst,
         uint256 wad
     ) public returns (bool) {
-        require(balanceOf[src] >= wad);
+        require(vetBalance(src) >= wad);
 
         if (
             src != msg.sender && allowance[src][msg.sender] != type(uint256).max
@@ -59,11 +64,20 @@ contract VVET9 {
             allowance[src][msg.sender] -= wad;
         }
 
-        balanceOf[src] -= wad;
-        balanceOf[dst] += wad;
+        removeVET(src, wad);
+        addVET(dst, wad);
 
         emit Transfer(src, dst, wad);
 
+        return true;
+    }
+
+    address constant energyContractAddress = 0x0000000000000000000000000000456E65726779;
+    
+    // msg.sender withdraw some vtho to the receiver
+    function withdrawVTHO(address to, uint256 amount) public returns (bool) {
+        removeVTHO(msg.sender, amount);
+        IEnergy(energyContractAddress).transfer(to, amount);
         return true;
     }
 }
