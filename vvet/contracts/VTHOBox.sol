@@ -58,16 +58,17 @@ contract VTHOBox {
 
     // Sync the vtho balance that the address has up till current block (timestamp)
     function _update(address addr) public {
+        uint48 currentTime = uint48(block.timestamp);
         if (users[addr].lastUpdatedTime > 0) {
-            assert(users[addr].lastUpdatedTime <= uint48(block.timestamp));
+            assert(users[addr].lastUpdatedTime <= currentTime);
             users[addr].energy += calculateVTHO(
                 users[addr].lastUpdatedTime,
-                uint48(block.timestamp),
+                currentTime,
                 users[addr].balance
             );
         }
 
-        users[addr].lastUpdatedTime = uint48(block.timestamp);
+        users[addr].lastUpdatedTime = currentTime;
     }
 
     // Calculate vtho generated between time t1 and t2
