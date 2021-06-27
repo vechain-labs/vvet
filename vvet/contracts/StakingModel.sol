@@ -52,10 +52,11 @@ contract StakingModel {
     }
 
     function vthoBalance(address addr) public view returns (uint256 amount) {
-        if (users[addr].lastUpdatedTime == 0) {
+        User memory user = users[addr];
+        if (user.lastUpdatedTime == 0) {
             return 0;
         }
-        return users[addr].energy + calculateVTHO(users[addr].lastUpdatedTime, uint48(block.timestamp), users[addr].balance);
+        return user.energy + calculateVTHO(user.lastUpdatedTime, uint48(block.timestamp), user.balance);
     }
 
     // Sync the vtho balance that the address has up till current block (timestamp)
