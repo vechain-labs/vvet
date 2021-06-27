@@ -1,1 +1,3 @@
 eth-brownie
+pytest
+thor-requests

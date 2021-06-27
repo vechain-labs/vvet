@@ -6,72 +6,81 @@ pragma solidity ^0.8.0;
 
 // It can also track the in-and-out of user's VTHO.
 
-// uint104 - safe for vtho to operate another 100 years.
+// Data structure concern:
+// uint48 - enough to store 30,000+ years.
+// uint104 - enough to store whole vet on VeChain.
+// uint104 - enough to store vtho for 100+ years.
 contract VTHOBox {
 
     struct User {
-        uint40 lastUpdatedTime;
-        uint104 vetBalance;
-        uint104 vthoBalance;
+        uint104 balance; // vet in wei
+        uint104 energy;  // vtho in wei
+        uint48 lastUpdatedTime;
     }
 
     mapping(address => User) private users;
 
-    function addVET(address addr, uint104 amount) internal {
+    modifier restrict(uint256 amount) {
+        require(amount < type(uint104).max, "value should < type(uint104).max");
+        _;
+    }
+
+    function addVET(address addr, uint256 amount) restrict(amount) internal {
         _update(addr);
-        users[addr].vetBalance += amount;
+        users[addr].balance += uint104(amount);
     }
 
-    function removeVET(address addr, uint104 amount) internal {
+    function removeVET(address addr, uint256 amount) restrict(amount) internal {
         _update(addr);
-        users[addr].vetBalance -= amount;
+        users[addr].balance -= uint104(amount);
     }
 
-    function vetBalance(address addr) public view returns (uint104 amount) {
-        return users[addr].vetBalance;
+    function vetBalance(address addr) public view returns (uint256 amount) {
+        return users[addr].balance;
     }
 
-    function addVTHO(address addr, uint104 amount) internal {
+    function addVTHO(address addr, uint256 amount) restrict(amount) internal {
         _update(addr);
-        users[addr].vthoBalance += amount;
+        users[addr].energy += uint104(amount);
     }
 
-    function removeVTHO(address addr, uint104 amount) internal {
+    function removeVTHO(address addr, uint256 amount) restrict(amount) internal {
         _update(addr);
-        users[addr].vthoBalance -= amount;
+        users[addr].energy -= uint104(amount);
     }
 
-    function vthoBalance(address addr) public returns (uint104 amount) {
-        _update(addr);
-        return users[addr].vthoBalance;
+    function vthoBalance(address addr) public view returns (uint256 amount) {
+        if (users[addr].lastUpdatedTime == 0) {
+            return 0;
+        }
+        return users[addr].energy + calculateVTHO(users[addr].lastUpdatedTime, uint48(block.timestamp), users[addr].balance);
     }
 
-    // Sync the vtho balance that the address has
-    // up till current block (timestamp)
-    function _update(address addr) internal {
+    // Sync the vtho balance that the address has up till current block (timestamp)
+    function _update(address addr) public {
         if (users[addr].lastUpdatedTime > 0) {
-            assert(users[addr].lastUpdatedTime <= uint40(block.timestamp));
-            users[addr].vthoBalance += calculateVTHO(
+            assert(users[addr].lastUpdatedTime <= uint48(block.timestamp));
+            users[addr].energy += calculateVTHO(
                 users[addr].lastUpdatedTime,
-                uint40(block.timestamp),
-                users[addr].vetBalance
+                uint48(block.timestamp),
+                users[addr].balance
             );
         }
 
-        users[addr].lastUpdatedTime = uint40(block.timestamp);
+        users[addr].lastUpdatedTime = uint48(block.timestamp);
     }
 
     // Calculate vtho generated between time t1 and t2
     // @param t1 Time in seconds
     // @param t2 Time in seconds
-    // @param vetBalance VET in wei
+    // @param vetAmount VET in wei
     // @return vtho generated in wei
     function calculateVTHO(
-        uint40 t1,
-        uint40 t2,
+        uint48 t1,
+        uint48 t2,
         uint104 vetAmount
     ) public pure returns (uint104 vtho) {
-        require(t1 < t2);
+        require(t1 < t2, "t1 should be < t2");
         return ((vetAmount * 5) / (10**9)) * (t2 - t1);
     }
 }
