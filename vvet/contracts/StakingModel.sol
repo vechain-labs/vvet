@@ -21,7 +21,7 @@ contract StakingModel {
     mapping(address => User) private users;
 
     modifier restrict(uint256 amount) {
-        require(amount < type(uint104).max, "value should < type(uint104).max");
+        require(amount <= type(uint104).max, "value should <= type(uint104).max");
         _;
     }
 
