@@ -77,5 +77,5 @@ def clean_wallet():
 
 
 @pytest.fixture
-def vthobox_contract():
-    return Contract.fromFile("build/contracts/VTHOBox.json")
+def vvet_contract():
+    return Contract.fromFile("build/contracts/VVET9.json")

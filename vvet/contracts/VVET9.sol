@@ -74,8 +74,8 @@ contract VVET9 is StakingModel {
 
     address constant energyContractAddress = 0x0000000000000000000000000000456E65726779;
     
-    // msg.sender withdraw some vtho to the receiver
-    function withdrawVTHO(address to, uint256 amount) public returns (bool) {
+    // msg.sender claim some vtho to the receiver
+    function claimVTHO(address to, uint256 amount) public returns (bool) {
         removeVTHO(msg.sender, amount);
         IEnergy(energyContractAddress).transfer(to, amount);
         return true;
