@@ -1,183 +1,120 @@
-import time
 import pytest
-from thor_requests import utils
+from thor_requests import connect
+from .helpers import (
+    helper_deploy,
+    helper_call,
+    helper_transact,
+    helper_wait_one_block
+)
 from .fixtures import (
-    testnet_connector,
-    testnet_wallet,
-    vvet_contract
+    solo_connector as connector,
+    solo_wallet as wallet,
+    clean_wallet,
+    vvet_contract as contract
 )
 
-@pytest.fixture(autouse=True)
-def deployed_contract(testnet_connector, testnet_wallet, vvet_contract):
-    ''' Deploy smart contract before each execution, return contract address '''
-    res = testnet_connector.deploy(testnet_wallet, vvet_contract, None, None, 0)
-    assert "id" in res
-
-    receipt = testnet_connector.wait_for_tx_receipt(res["id"])
-    created_contracts = utils.read_created_contracts(receipt)
-    assert len(created_contracts) == 1
-    return created_contracts[0]
 
 @pytest.fixture
-def deposit_vet(deployed_contract, testnet_connector, testnet_wallet, vvet_contract, wei):
-    ''' Add some VET to the vvet.sol '''
-    res = testnet_connector.transact(
-        testnet_wallet,
-        vvet_contract,
-        "addVET",
-        [testnet_wallet.getAddress(), wei],
-        deployed_contract
-    )
-    assert res["id"]
-    receipt = testnet_connector.wait_for_tx_receipt(res["id"])
-    assert utils.is_reverted(receipt) == False
+def deployed(connector, wallet, contract):
+    ''' Deploy a new smart contract, return the deployed contract address '''
+    return helper_deploy(connector, wallet, contract)
 
-def test_deposit_vet():
-    ''' User deposit vet '''
-    pass
 
-def test_redeem_vet():
-    ''' User redeem vet with vvet '''
-    pass
+@pytest.mark.parametrize(
+    'amount, should_revert',
+    [
+        (3*10**18, False), # normal deposit: 3 vet
+        (15*10**18, False), # normal deposit: 15 vet
+        (2**105, True), # too big deposit: overflow amount
+    ]
+)
+def test_deposit_vet(deployed, connector, wallet, contract, amount, should_revert):
+    '''
+        User "deposit" vet to exchange for vvet,
+        then check "balanceOf" user's vvet.
 
-def test_over_redeem_vet():
-    ''' User over redeem vvet '''
-    pass
+        Include reverted and non-reverted cases.
+    '''
 
-def test_transfer_vvet():
-    ''' User transfer his vvet '''
-    pass
+    r, receipt = helper_transact(connector, wallet, deployed, contract, 'deposit', [], amount)
+    assert r == should_revert
+    
+    if not should_revert:
+        r, res = helper_call(connector, wallet.getAddress(), deployed, contract, 'balanceOf', [wallet.getAddress()])
+        assert r == False
+        assert int(res['decoded']['0']) == amount
 
-def test_over_transfer_vvet():
-    ''' User over transfer his vvet '''
-    pass
 
-def test_approve():
-    ''' Test approve of one's funds to be spend by other person '''
-    pass
+@pytest.mark.parametrize(
+    'inAmount, outAmount, should_revert',
+    [
+        (2*10**18, 1*10**18, False), # normal withdraw
+        (1*10**18, 2*10**18, True), # over withdraw
+        (1*10**18, 2**105, True), # over withdraw with overflow amount
+    ]
+)
+def test_withdraw_vet(deployed, connector, wallet, contract, inAmount, outAmount, should_revert):
+    ''' User withdraw vet with vvet '''
+    # First, deposit
+    r, receipt = helper_transact(connector, wallet, deployed, contract, 'deposit', [], inAmount)
+    assert r == False
 
-def test_over_approve():
-    ''' Test over approve of one's funds '''
-    pass
+    # Wait for pack
+    helper_wait_one_block(connector)
 
-def test_claim():
-    ''' Normal claim of generated vtho '''
-    pass
+    # Next, withdraw
+    r, receipt = helper_transact(connector, wallet, deployed, contract, 'withdraw', [outAmount])
+    assert r == should_revert
 
-def test_over_claim():
-    ''' Over claim of generated vtho '''
-    pass
 
-def test_claim_to_other_wallet():
-    ''' Claim vtho to another wallet than the caller itself '''
-    pass
+@pytest.mark.parametrize(
+    'inAmount, outAmount, should_revert',
+    [
+        (2*10**18, 1*10**18, False), # normal transfer (success)
+        (2*10**18, 2*10**18, False), # all transfer (success)
+        (1*10**18, 2*10**18, True), # over transfer (fail)
+        (1*10**18, 2**105, True), # over transfer with overflow amount (fail)
+    ]
+)
+def test_transfer_vvet(deployed, connector, wallet, clean_wallet ,contract, inAmount, outAmount, should_revert):
+    ''' User transfer his vvet to other person '''
+    # First, deposit
+    r, receipt = helper_transact(connector, wallet, deployed, contract, 'deposit', [], inAmount)
+    assert r == False
 
-# def test_store(deployed_contract, testnet_connector, testnet_wallet, vvet_contract):
-#     ''' Transaction of add some VET '''
-#     print("wallet:addr:", testnet_wallet.getAddress())
-#     contract_addr = deployed_contract
-#     print("contract:addr:", contract_addr)
+    # Wait for pack
+    helper_wait_one_block(connector)
 
-#     # Call to get the balance of user's vet
-#     res = testnet_connector.call(
-#         testnet_wallet.getAddress(),
-#         vvet_contract,
-#         "vetBalance",
-#         [testnet_wallet.getAddress()],
-#         contract_addr
-#     )
-#     assert res["reverted"] == False
-#     assert res["decoded"]["0"] == 0  # nothing added, so no vet is there
-#     print('call:vetBalance:gas:', res["gasUsed"])
+    # Next, transfer to other person
+    r, receipt = helper_transact(connector, wallet, deployed, contract, 'transfer', [clean_wallet.getAddress(), outAmount])
+    assert r == should_revert
 
-#     # Call to get the balance of user's vtho
-#     res = testnet_connector.call(
-#         testnet_wallet.getAddress(),
-#         vvet_contract,
-#         "vthoBalance",
-#         [testnet_wallet.getAddress()],
-#         contract_addr
-#     )
-#     assert res["reverted"] == False
-#     assert res["decoded"]["0"] == 0  # nothing added, so no vtho is there
-#     print('call:vthoBalance:gas:', res["gasUsed"])
+    # Wait for pack
+    helper_wait_one_block(connector)
 
-#     # Add 3 vet for the first time
-#     res = testnet_connector.transact(
-#         testnet_wallet,
-#         vvet_contract,
-#         "addVET",
-#         [testnet_wallet.getAddress(), 3 * (10 ** 18)],
-#         contract_addr
-#     )
-#     assert res["id"]
+    # Finally, check "balanceOf" of two people
+    if r == False:
+        _, res = helper_call(connector, wallet.getAddress(), deployed, contract, 'balanceOf', [wallet.getAddress()])
+        assert int(res['decoded']['0']) == inAmount - outAmount
+        _, res = helper_call(connector, wallet.getAddress(), deployed, contract, 'balanceOf', [clean_wallet.getAddress()])
+        assert int(res['decoded']['0']) == outAmount
+    else:
+        _, res = helper_call(connector, wallet.getAddress(), deployed, contract, 'balanceOf', [wallet.getAddress()])
+        assert int(res['decoded']['0']) == inAmount
+        _, res = helper_call(connector, wallet.getAddress(), deployed, contract, 'balanceOf', [clean_wallet.getAddress()])
+        assert int(res['decoded']['0']) == 0
 
-#     tx_id = res["id"]
-#     receipt = testnet_connector.wait_for_tx_receipt(tx_id)
-#     print('transact:addVET:gas:', receipt["gasUsed"])
 
-#     time.sleep(12)
+# def test_approve():
+#     ''' Test approve of one's funds to be spend by other person '''
+#     pass
 
-#     # Call to get the balance of user's vet
-#     res = testnet_connector.call(
-#         testnet_wallet.getAddress(),
-#         vvet_contract,
-#         "vetBalance",
-#         [testnet_wallet.getAddress()],
-#         contract_addr
-#     )
-#     assert res["reverted"] == False
-#     assert res["decoded"]["0"] == 3 * (10 ** 18)  # 3 vet should be there
-#     print('call:vetBalance:gas:', res["gasUsed"])
 
-#     # Call to get the balance of user's vtho
-#     res = testnet_connector.call(
-#         testnet_wallet.getAddress(),
-#         vvet_contract,
-#         "vthoBalance",
-#         [testnet_wallet.getAddress()],
-#         contract_addr
-#     )
-#     assert res["reverted"] == False
-#     assert res["decoded"]["0"] > 0 # Some vtho should be there
-#     print('call:vthoBalance:gas:', res["gasUsed"])
+# def test_claim_vtho():
+#     ''' Normal claim of generated vtho '''
+#     pass
 
-#     # Add more VET (3) to the user
-#     res = testnet_connector.transact(
-#         testnet_wallet,
-#         vvet_contract,
-#         "addVET",
-#         [testnet_wallet.getAddress(), 3 * (10 ** 18)],
-#         contract_addr
-#     )
-#     assert res["id"]
 
-#     tx_id = res["id"]
-#     receipt = testnet_connector.wait_for_tx_receipt(tx_id)
-#     print('transact:addVET:gas:', receipt["gasUsed"])
-
-#     time.sleep(12)
-
-#     # Call to get the balance of user's vet
-#     res = testnet_connector.call(
-#         testnet_wallet.getAddress(),
-#         vvet_contract,
-#         "vetBalance",
-#         [testnet_wallet.getAddress()],
-#         contract_addr
-#     )
-#     assert res["reverted"] == False
-#     assert res["decoded"]["0"] == 6 * (10 ** 18)  # 6 vet should be there
-#     print('call:vetBalance:gas:', res["gasUsed"])
-
-#     # Call to get the balance of user's vtho
-#     res = testnet_connector.call(
-#         testnet_wallet.getAddress(),
-#         vvet_contract,
-#         "vthoBalance",
-#         [testnet_wallet.getAddress()],
-#         contract_addr
-#     )
-#     assert res["reverted"] == False
-#     assert res["decoded"]["0"] > 0 # Some vtho should be there
-#     print('call:vthoBalance:gas:', res["gasUsed"])
+# def test_claim_vtho_to_other_wallet():
+#     ''' Claim vtho to another wallet than the caller itself '''
+#     pass
