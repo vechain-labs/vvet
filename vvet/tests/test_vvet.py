@@ -35,10 +35,10 @@ def test_deposit_vet(deployed, connector, wallet, contract, amount, should_rever
 
         Include reverted and non-reverted cases.
     '''
-
+    # First, deposit
     r, receipt = helper_transact(connector, wallet, deployed, contract, 'deposit', [], amount)
     assert r == should_revert
-    
+    # Next, check the balance
     if not should_revert:
         r, res = helper_call(connector, wallet.getAddress(), deployed, contract, 'balanceOf', [wallet.getAddress()])
         assert r == False
@@ -105,16 +105,85 @@ def test_transfer_vvet(deployed, connector, wallet, clean_wallet ,contract, inAm
         assert int(res['decoded']['0']) == 0
 
 
-# def test_approve():
-#     ''' Test approve of one's funds to be spend by other person '''
-#     pass
+@pytest.mark.parametrize(
+    'inAmount, approveAmount, outAmount, a_should_revert, t_should_revert',
+    [
+        (2*10**18, 1*10**18, 1*10**18, False, False), # owner approve some
+        (2*10**18, 2*10**18, 2*10**18, False, False), # owner approve whole
+        (1*10**18, 2*10**18, 2*10**18, False, True), # owner over approve, but transfer shall fail
+        (1*10**18, 2**105, 2**105, False, True), # owner over approve with overflow, but transfer shall fail
+        (1*10**18, 2**105, 1*10**18, False, False), # owner over approve with overflow, and transfer shall success
+        (2*10**18, 2*10**18, 3*10**18, False, True), # user over transfer
+        (2*10**18, 2*10**18, 2**105, False, True), # user over transfer with overflow
+    ]
+)
+def test_approve(deployed, connector, wallet, clean_wallet, contract, inAmount, approveAmount, outAmount, a_should_revert, t_should_revert):
+    ''' Test approve of one's funds to be spent by other person '''
+    # Deposit
+    r, receipt = helper_transact(connector, wallet, deployed, contract, 'deposit', [], inAmount)
+    assert r == False
+    helper_wait_one_block(connector)
+
+    # "approve"
+    r, receipt = helper_transact(connector, wallet, deployed, contract, 'approve', [clean_wallet.getAddress(), approveAmount])
+    assert r == a_should_revert
+
+    if r == False:
+        # "allowance"
+        _, res = helper_call(connector, clean_wallet.getAddress(), deployed, contract, 'allowance', [wallet.getAddress(), clean_wallet.getAddress()])
+        assert int(res['decoded']['0']) == approveAmount
+        # "transferFrom"
+        r, receipt = helper_transact(connector, wallet, deployed, contract, 'transferFrom', [wallet.getAddress(), clean_wallet.getAddress(), outAmount])
+        assert r == t_should_revert
+
+        if r == False:
+            # Check balance of both wallets
+            _, res = helper_call(connector, clean_wallet.getAddress(), deployed, contract, 'balanceOf', [wallet.getAddress()])
+            assert int(res['decoded']['0']) == inAmount - outAmount
+            _, res = helper_call(connector, clean_wallet.getAddress(), deployed, contract, 'balanceOf', [clean_wallet.getAddress()])
+            assert int(res['decoded']['0']) == outAmount
 
 
-# def test_claim_vtho():
-#     ''' Normal claim of generated vtho '''
-#     pass
+def test_staking_by_claim():
+    ''' Test generated vtho by claim '''
+    # Deposit VET
+    # Wait for 2 blocks
+    # Check generated VTHO balance
+    # Claim vtho to a wallet
+    # Wait for pack
+    # Check vtho balance
+    pass
+
+def test_staking_by_transfer():
+    ''' Test generated vtho by transfer vvet '''
+    # Deposit VET
+    # wait for 2 blocks
+    # Check generated vtho balance
+    # transfer vvet to other wallet
+    # wait for 2 blocks
+    # check vtho balance of 2 people
 
 
-# def test_claim_vtho_to_other_wallet():
-#     ''' Claim vtho to another wallet than the caller itself '''
-#     pass
+def test_staking_by_withdraw():
+    ''' Test generated vtho by withdraw vvet to vet '''
+    # Deposit VET
+    # wait for 2 blocks
+    # Check generated vtho balance
+    # withdraw VET
+    # wait for 2 blocks
+    # check the vtho balance
+    pass
+
+
+def test_staking_by_approve():
+    ''' Test generated vtho by approve other people some vvet '''
+    # Desposit VET
+    # wait for 2 blocks
+    # Check generated vtho balance
+    # approve other wallet some VET
+    # check generated vtho balance
+    # transferFrom vvet to other wallet
+    # check vtho balance of two wallets
+    # wait for 2 blocks
+    # check vtho balance of two wallets
+    pass
