@@ -40,9 +40,9 @@ def helper_transact(connector:Connect, wallet:Wallet, contract_addr:str, contrac
     receipt = connector.wait_for_tx_receipt(res["id"])
     return receipt["reverted"], receipt
 
-def helper_wait_one_block(connector:Connect):
+def helper_wait_for_block(connector:Connect, number:int=1):
     counter = 0
     for block in connector.ticker():
         counter += 1
-        if counter >= 1:
+        if counter >= number:
             break
