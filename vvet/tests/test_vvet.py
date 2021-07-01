@@ -171,67 +171,78 @@ def _view_vtho_balance(deployed, connector, wallet, contract):
     return current_timestamp, current_vtho
 
 
-@pytest.mark.parametrize(
-    'amount_vet, blocks_number',
-    [
-        (1*10**18, 1),
-        (2*10**18, 1)
-    ]
-)
-def test_staking(amount_vet, blocks_number, deployed, connector, wallet, contract):
-    ''' Stake vet then check the vtho generated '''
-    # Deposit
-    packed_timestamp, _ = _stake_vet(amount_vet, deployed, connector, wallet, contract)
+# @pytest.mark.parametrize(
+#     'amount_vet, blocks_number',
+#     [
+#         (1*10**18, 1),
+#         (2*10**18, 1)
+#     ]
+# )
+# def test_staking(amount_vet, blocks_number, deployed, connector, wallet, contract):
+#     ''' Stake vet then check the vtho generated '''
+#     # Deposit
+#     packed_timestamp, _ = _stake_vet(amount_vet, deployed, connector, wallet, contract)
     
-    # Wait
-    helper_wait_for_block(connector, blocks_number)
+#     # Wait
+#     helper_wait_for_block(connector, blocks_number)
     
-    # Check balance
-    current_timestamp, current_vtho = _view_vtho_balance(deployed, connector, wallet, contract)
+#     # Check balance
+#     current_timestamp, current_vtho = _view_vtho_balance(deployed, connector, wallet, contract)
 
-    # Verify balance
-    assert current_vtho == _calculate_vtho(packed_timestamp, current_timestamp, amount_vet)
+#     # Verify balance
+#     assert current_vtho == _calculate_vtho(packed_timestamp, current_timestamp, amount_vet)
+
+# @pytest.mark.parametrize(
+#     'amount_vet, blocks_number, claim_amount, should_revert',
+#     [
+#         (1*10**18, 1, 5*10**9, False), # normal claim
+#         (1*10**18, 1, 1*10**18, True), # over claim
+#         (1*10**18, 1, 2**105, True), # over claim, with overflow
+#         (1*10**18, 1, 0, False), # claim 0 vtho (success)
+#     ]
+# )
+# def test_staking_by_claim(amount_vet, blocks_number, claim_amount, should_revert, deployed, connector, wallet, contract):
+#     ''' Stake vet then claim vtho '''
+#     # Deposit vet
+#     packed_timestamp, _ = _stake_vet(amount_vet, deployed, connector, wallet, contract)
+#     # Wait
+#     helper_wait_for_block(connector, blocks_number)
+#     # claim some vtho (but won't withdraw vet)
+#     r, receipt = helper_transact(connector, wallet, deployed, contract, 'claimVTHO', [wallet.getAddress(), claim_amount])
+#     assert r == should_revert
+#     if r == False:
+#         # Wait
+#         helper_wait_for_block(connector, 1)
+#         # Check vtho balance
+#         current_timestamp, current_vtho = _view_vtho_balance(deployed, connector, wallet, contract)
+#         assert _calculate_vtho(packed_timestamp, current_timestamp, amount_vet) - claim_amount == current_vtho
 
 @pytest.mark.parametrize(
-    'amount_vet, blocks_number, claim_amount, should_revert',
-    [
-        (1*10**18, 1, 5*10**9, False), # normal claim
-        (1*10**18, 1, 1*10**18, True), # over claim
-        (1*10**18, 1, 2**105, True), # over claim, with overflow
-        (1*10**18, 1, 0, False), # claim 0 vtho (success)
-    ]
-)
-def test_staking_by_claim(amount_vet, blocks_number, claim_amount, should_revert, deployed, connector, wallet, contract):
-    ''' Stake vet then claim vtho '''
-    # Deposit vet
-    packed_timestamp, _ = _stake_vet(amount_vet, deployed, connector, wallet, contract)
-    # Wait
-    helper_wait_for_block(connector, blocks_number)
-    # claim some vtho (but won't withdraw vet)
-    r, receipt = helper_transact(connector, wallet, deployed, contract, 'claimVTHO', [wallet.getAddress(), claim_amount])
-    assert r == should_revert
-    if r == False:
-        # Wait
-        helper_wait_for_block(connector, 1)
-        # Check vtho balance
-        current_timestamp, current_vtho = _view_vtho_balance(deployed, connector, wallet, contract)
-        assert _calculate_vtho(packed_timestamp, current_timestamp, amount_vet) - claim_amount == current_vtho
-
-@pytest.mark.parametrize(
-    'amount_vet, transfer_amount',
+    'amount_vet, transfer_amount, t_should_revert',
     [
         (1*10**18, 5*10**17, False), # transfer half of vvet
     ]
 )
-def test_staking_by_transfer(amount_vet, transfer_amount, deployed, connector, wallet, contract):
+def test_staking_by_transfer(amount_vet, transfer_amount, t_should_revert, deployed, connector, wallet, contract, clean_wallet):
     ''' Stake vet, transfer vvet '''
     # Deposit VET
     packed_timestamp, _ = _stake_vet(amount_vet, deployed, connector, wallet, contract)
     # wait for blocks
+    helper_wait_for_block(connector)
     # transfer vvet to other wallet
-    # wait for blocks
+    r, receipt = helper_transact(connector, wallet, deployed, contract, 'transfer', [clean_wallet.getAddress(), transfer_amount])
+    assert r == t_should_revert
+    changed_timestamp = receipt['meta']['blockTimestamp']
     # check vtho balance of 2 people
-    pass
+    if r == False:
+        # wait for blocks
+        helper_wait_for_block(connector)
+        # Check vtho balance of the receiver
+        t, v = _view_vtho_balance(deployed, connector, clean_wallet, contract)
+        assert _calculate_vtho(changed_timestamp, t, transfer_amount) == v
+        # Check vtho balance of the sender
+        t, v = _view_vtho_balance(deployed, connector, wallet, contract)
+        assert _calculate_vtho(packed_timestamp, changed_timestamp, amount_vet) + _calculate_vtho(changed_timestamp, t, transfer_amount) == v
 
 
 def test_staking_by_withdraw():
