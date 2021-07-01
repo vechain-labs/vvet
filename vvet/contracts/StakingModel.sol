@@ -32,7 +32,7 @@ contract StakingModel {
 
     function removeVET(address addr, uint256 amount) restrict(amount) internal {
         _update(addr);
-        assert(users[addr].balance >= uint104(amount));
+        require(users[addr].balance >= uint104(amount), "insuffcient vet");
         users[addr].balance -= uint104(amount);
     }
 
@@ -47,7 +47,7 @@ contract StakingModel {
 
     function removeVTHO(address addr, uint256 amount) restrict(amount) internal {
         _update(addr);
-        assert(users[addr].energy >= uint104(amount));
+        require(users[addr].energy >= uint104(amount), "insuffcient vtho");
         users[addr].energy -= uint104(amount);
     }
 
