@@ -4,6 +4,7 @@ compile:
 
 test:
 	. .env/bin/activate && cd vvet && python3 -m pytest -vv -s
+
 # Install compiler tools
 install:
 	npm install -g ganache-cli

@@ -84,7 +84,7 @@ contract StakingModel {
         uint48 t2,
         uint104 vetAmount
     ) public pure returns (uint104 vtho) {
-        require(t1 < t2, "t1 should be < t2");
+        require(t1 <= t2, "t1 should be <= t2");
         return ((vetAmount * 5) / (10**9)) * (t2 - t1);
     }
 }
