@@ -60,7 +60,7 @@ contract StakingModel {
     }
 
     // Sync the vtho balance that the address has up till current block (timestamp)
-    function _update(address addr) public {
+    function _update(address addr) internal {
         uint48 currentTime = uint48(block.timestamp);
         if (users[addr].lastUpdatedTime > 0) {
             assert(users[addr].lastUpdatedTime <= currentTime);
