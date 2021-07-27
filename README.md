@@ -1,8 +1,8 @@
 # VVET
 
-vVET, which is "Veiled Vet", is a VIP-180 standard token which 1:1 pegs VET.
+vVET is a VIP-180 standard token which 1:1 pegs VET.
 
-The holders of vVET enjoye the same VTHO generation as if they were holding VET.
+The holders of vVET enjoy the same VTHO generation as if they were holding VET.
 
 ## Credits
 
