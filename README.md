@@ -1,13 +1,8 @@
 # VVET
 
-## Instances on VeChain
+vVET, which is "Veiled Vet", is a VIP-180 standard token which 1:1 pegs VET.
 
-Below smart contracts are deployed to VeChain Thor network.
-
-|                                              Network                                               |                  Address                   |
-| -------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| [mainnet](https://explore.vechain.org/accounts/0x0edab4e7e7d2c23d043f1352b7b10d899415ada7/)        | 0x0eDAb4E7e7D2c23D043f1352b7B10d899415ADA7 |
-| [testnet](https://explore-testnet.vechain.org/accounts/0x535b9a56c2f03a3658fc8787c44087574eb381fd) | 0x535B9a56C2f03a3658FC8787C44087574eb381Fd |
+The holders of vVET enjoye the same VTHO generation as if they were holding VET.
 
 ## Credits
 
