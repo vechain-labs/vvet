@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.0;
 
+import "../interfaces/IStakingModel.sol";
+
 // StakingModel tracks the in-and-out of user's VET
 // And updates user's vtho balance accordingly.
 
@@ -10,7 +12,8 @@ pragma solidity ^0.8.0;
 // uint48 - enough to store 30,000+ years.
 // uint104 - enough to store whole vet on VeChain.
 // uint104 - enough to store vtho for 100+ years.
-contract StakingModel {
+
+contract StakingModel is IStakingModel {
 
     struct User {
         uint104 balance; // vet in wei
@@ -36,7 +39,7 @@ contract StakingModel {
         users[addr].balance -= uint104(amount);
     }
 
-    function vetBalance(address addr) public view returns (uint256 amount) {
+    function vetBalance(address addr) public override view returns (uint256 amount) {
         return users[addr].balance;
     }
 
@@ -51,7 +54,7 @@ contract StakingModel {
         users[addr].energy -= uint104(amount);
     }
 
-    function vthoBalance(address addr) public view returns (uint256 amount) {
+    function vthoBalance(address addr) public override view returns (uint256 amount) {
         User memory user = users[addr];
         if (user.lastUpdatedTime == 0) {
             return 0;
