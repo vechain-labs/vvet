@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 import "./StakingModel.sol";
 import "../interfaces/IEnergy.sol";
+import "../interfaces/IVthoClaimable.sol";
 
-contract VVET9 is StakingModel {
+contract VVET9 is StakingModel, IVthoClaimable {
     string public name = "Veiled VET";
     string public symbol = "VVET";
     uint8 public decimals = 18;
@@ -75,7 +76,7 @@ contract VVET9 is StakingModel {
     address constant energyContractAddress = 0x0000000000000000000000000000456E65726779;
     
     // msg.sender claim some vtho to the receiver
-    function claimVTHO(address to, uint256 amount) public returns (bool) {
+    function claimVTHO(address to, uint256 amount) public override returns (bool) {
         removeVTHO(msg.sender, amount);
         IEnergy(energyContractAddress).transfer(to, amount);
         return true;
