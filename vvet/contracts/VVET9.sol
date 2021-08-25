@@ -62,6 +62,7 @@ contract VVET9 is StakingModel, IVthoClaimable {
         ) {
             require(allowance[src][msg.sender] >= wad);
             allowance[src][msg.sender] -= wad;
+            emit Approval(src, msg.sender, allowance[src][msg.sender]);
         }
 
         removeVET(src, wad);
