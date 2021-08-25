@@ -55,8 +55,6 @@ contract VVET9 is StakingModel, IVthoClaimable {
         address dst,
         uint256 wad
     ) public returns (bool) {
-        require(vetBalance(src) >= wad);
-
         if (
             src != msg.sender && allowance[src][msg.sender] != type(uint256).max
         ) {

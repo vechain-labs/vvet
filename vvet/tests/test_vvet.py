@@ -30,6 +30,7 @@ def deployed(connector, wallet, contract):
     [
         (3*10**18, False), # normal deposit: 3 vet
         (15*10**18, False), # normal deposit: 15 vet
+        (1*10**18 + 2 ** 104, True), # over deposit: uint104 + 1
         (2**105, True), # too big deposit: overflow amount
     ]
 )
@@ -54,7 +55,8 @@ def test_deposit_vet(deployed, connector, wallet, contract, amount, should_rever
     'inAmount, outAmount, should_revert',
     [
         (2*10**18, 1*10**18, False), # normal withdraw
-        (1*10**18, 2*10**18, True), # over withdraw
+        (1*10**18, 2*10**18, True), # over withdraw (1 in 2 out)
+        (1*10**18, 2**104 + 1*10**18, True), # over withdraw (1 in, uint104+1 out) 
         (1*10**18, 2**105, True), # over withdraw with overflow amount
     ]
 )
@@ -78,6 +80,7 @@ def test_withdraw_vet(deployed, connector, wallet, contract, inAmount, outAmount
         (2*10**18, 1*10**18, False), # normal transfer (success)
         (2*10**18, 2*10**18, False), # all transfer (success)
         (1*10**18, 2*10**18, True), # over transfer (fail)
+        (1*10**18, 1*10**18 + 2**104, True), # over transfer (1 in, uint104 + 1 out)
         (1*10**18, 2**105, True), # over transfer with overflow amount (fail)
     ]
 )
@@ -116,8 +119,10 @@ def test_transfer_vvet(deployed, connector, wallet, clean_wallet ,contract, inAm
         (2*10**18, 1*10**18, 1*10**18, False, False), # owner approve some
         (2*10**18, 2*10**18, 2*10**18, False, False), # owner approve whole
         (1*10**18, 2*10**18, 2*10**18, False, True), # owner over approve, but transfer shall fail
-        (1*10**18, 2**105, 2**105, False, True), # owner over approve with overflow, but transfer shall fail
-        (1*10**18, 2**105, 1*10**18, False, False), # owner over approve with overflow, and transfer shall success
+        (1*10**18, 1*10**18 + 2**104, 1*10**18, False, False), # owner over approve with overflow (success), transfer shall success
+        (1*10**18, 1*10**18 + 2**104, 1*10**18 + 2**104, False, True), # owner over approve with overflow (success), transfer shall fail
+        (1*10**18, 2**105, 2**105, False, True), # owner over approve with overflow (success), and transfer shall fail
+        (1*10**18, 2**105, 1*10**18, False, False), # owner over approve with overflow (success), and transfer shall success
         (2*10**18, 2*10**18, 3*10**18, False, True), # user over transfer
         (2*10**18, 2*10**18, 2**105, False, True), # user over transfer with overflow
     ]
@@ -196,6 +201,7 @@ def test_staking(amount_vet, blocks_number, deployed, connector, wallet, contrac
     'amount_vet, blocks_number, claim_amount, should_revert',
     [
         (1*10**18, 1, 5*10**9, False), # normal claim
+        (1*10**18, 1, 5*10**9 + 2**104, True), # over claim (over uint104)
         (1*10**18, 1, 1*10**18, True), # over claim
         (1*10**18, 1, 2**105, True), # over claim, with overflow
         (1*10**18, 1, 0, False), # claim 0 vtho (success)
@@ -221,6 +227,7 @@ def test_staking_by_claim(amount_vet, blocks_number, claim_amount, should_revert
     'amount_vet, transfer_amount, t_should_revert',
     [
         (1*10**18, 5*10**17, False), # transfer half of vvet
+        (1*10**18, 5*10**17 + 2**104, True), # transfer overflow, > uint104
         (1*10**18, 1*10**18, False), # transfer all of vvet
         (1*10**18, 2*10**18, True), # over transfer vvet
         (1*10**18, 2**105, True), # over transfer vvet with overflow
@@ -252,6 +259,7 @@ def test_staking_by_transfer_vvet(amount_vet, transfer_amount, t_should_revert, 
     'in_amount, out_amount, should_revert',
     [
         (1*10**18, 5*10**17, False), # withdraw half of vvet
+        (1*10**18, 5*10**17 + 2**104, True), # withdraw with overflow, > uint104
         (1*10**18, 1*10**18, False), # withdraw all of vvet
         (1*10**18, 2*10**18, True), # over withdraw vvet
         (1*10**18, 2**105, True), # over withdraw vvet with overflow
@@ -283,6 +291,8 @@ def test_staking_by_withdraw_vvet(in_amount, out_amount, should_revert, deployed
         (1*10**18, 1*10**18, 5*10**17, False, False), # approve all, but transfer half
         (1*10**18, 1*10**18, 1*10**18, False, False), # approve all, transfer all
         (1*10**18, 2*10**18, 1*10**18, False, False), # over approve, tranfer all holdings
+        (1*10**18, 2*10**18, 1*10**18 + 2**104, False, True), # over approve, overflow transfer
+        (1*10**18, 1*10**18 + 2**104, 1*10**18 + 2**104, False, True), # overflow approve, overflow transfer
         (1*10**18, 2*10**18, 2*10**18, False, True), # over approve, over transfer
         (1*10**18, 2**105, 1*10**18, False, False), # over approve with overflow, transfer all
     ]
