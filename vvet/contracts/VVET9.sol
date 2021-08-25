@@ -26,7 +26,6 @@ contract VVET9 is StakingModel, IVthoClaimable {
     }
 
     function withdraw(uint256 wad) public {
-        require(vetBalance(msg.sender) >= wad);
         removeVET(msg.sender, wad);
         payable(msg.sender).transfer(wad);
         emit Withdrawal(msg.sender, wad);
