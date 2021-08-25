@@ -88,6 +88,6 @@ contract StakingModel is IStakingModel {
         uint104 vetAmount
     ) public pure returns (uint104 vtho) {
         require(t1 <= t2, "t1 should be <= t2");
-        return ((vetAmount * 5) / (10**9)) * (t2 - t1);
+        return ((vetAmount * 5) * (t2 - t1)) / (10**9);
     }
 }
