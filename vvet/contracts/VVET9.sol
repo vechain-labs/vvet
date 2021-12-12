@@ -13,6 +13,7 @@ contract VVET9 is StakingModel, IVthoClaimable {
     event Transfer(address indexed src, address indexed dst, uint256 wad);
     event Deposit(address indexed dst, uint256 wad);
     event Withdrawal(address indexed src, uint256 wad);
+    event ClaimVTHO(address indexed src, address indexed dst, uint256 wad);
 
     mapping(address => mapping(address => uint256)) public allowance;
 
@@ -77,6 +78,7 @@ contract VVET9 is StakingModel, IVthoClaimable {
     function claimVTHO(address to, uint256 amount) public override returns (bool) {
         removeVTHO(msg.sender, amount);
         IEnergy(energyContractAddress).transfer(to, amount);
+        emit ClaimVTHO(msg.sender, to, amount);
         return true;
     }
 }
