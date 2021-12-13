@@ -8,6 +8,16 @@ The holders of vVET enjoy the same VTHO generation as if they were holding VET.
 
 [WETH9](https://github.com/gnosis/canonical-weth/commit/0dd1ea3e295eef916d0c6223ec63141137d22d67)
 
+## Instances
+
++---------+--------------------------------------------+
+| Network | Address                                    |
++---------+--------------------------------------------+
+| test    | 0x86fb5343bbecffc86185c023a2a6ccc76fc0afd8 |
++---------+--------------------------------------------+
+| main    | 0x45429a2255e7248e57fce99e7239aed3f84b7a53 |
++---------+--------------------------------------------+
+
 ## Local Development
 ```bash
 make install # Install depedencies
