@@ -10,13 +10,15 @@ The holders of vVET enjoy the same VTHO generation as if they were holding VET.
 
 ## Instances
 
-+---------+--------------------------------------------+
-| Network | Address                                    |
-+---------+--------------------------------------------+
+
+| Network |                  Address                   |
+| ------- | ------------------------------------------ |
 | test    | 0x86fb5343bbecffc86185c023a2a6ccc76fc0afd8 |
-+---------+--------------------------------------------+
 | main    | 0x45429a2255e7248e57fce99e7239aed3f84b7a53 |
-+---------+--------------------------------------------+
+
+## Audit
+
+See `audit/` folder
 
 ## Local Development
 ```bash
